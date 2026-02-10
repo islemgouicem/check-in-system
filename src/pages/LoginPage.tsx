@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
@@ -55,7 +56,7 @@ const LoginPage = () => {
 
                 {/* Login Card */}
                 <div className="bg-secondary-800/80 backdrop-blur-xl p-10 rounded-[2.5rem] border border-secondary-600/30 shadow-2xl relative overflow-hidden animate-in fade-in zoom-in-95 duration-1000 delay-200">
-                    <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-primary-500/50 to-transparent"></div>
+                    <div className="absolute top-0 left-0 w-full h-0.5 bg-linear-to-r from-transparent via-primary-500/50 to-transparent"></div>
 
                     <form className="space-y-8" onSubmit={handleLogin}>
                         <div className="space-y-6">
@@ -84,7 +85,7 @@ const LoginPage = () => {
                                         name="password"
                                         type="password"
                                         required
-                                        className="w-full pl-12 pr-4 py-4 bg-secondary-900/50 border border-secondary-600/30 rounded-2xl text-white caret-primary-500 placeholder-gray-600 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all font-medium"
+                                        className="w-full pl-12 pr-4 py-4 bg-secondary-900/50 border border-secondary-600/30 rounded-2xl text-white  placeholder-gray-600 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all font-medium"
                                         placeholder="••••••••"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
