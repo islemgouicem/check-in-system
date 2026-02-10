@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'react-hot-toast';
-import { PartyPopper, Search, QrCode, CheckCircle, Users, ShieldCheck, ArrowRight, LogOut } from 'lucide-react';
+import { PartyPopper, Search, QrCode, Users, ShieldCheck } from 'lucide-react';
 import ScannerOverlay from '../components/ScannerOverlay';
 import { useDebounce } from '../hooks/useDebounce';
 

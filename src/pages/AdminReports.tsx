@@ -5,8 +5,6 @@ import {
     ShieldCheck,
     Check,
     X,
-    ChevronRight,
-    ChevronDown,
     Calendar,
     Search,
     FileText,
@@ -40,7 +38,6 @@ export default function AdminReports() {
     const [checkins, setCheckins] = useState<CheckIn[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [expandedTeams, setExpandedTeams] = useState<Set<string>>(new Set());
 
     useEffect(() => {
         loadData();
@@ -64,11 +61,6 @@ export default function AdminReports() {
             setPeople(peopleRes.data || []);
             setCheckins(checkinsRes.data || []);
 
-            // Auto-expand first few teams if they exist
-            if (peopleRes.data) {
-                const initialTeams = new Set(peopleRes.data.map(p => p.team || 'No Team').slice(0, 3));
-                setExpandedTeams(initialTeams);
-            }
 
         } catch (error) {
             console.error('Error loading report data:', error);
@@ -78,15 +70,6 @@ export default function AdminReports() {
         }
     }
 
-    const toggleTeam = (teamName: string) => {
-        const newExpanded = new Set(expandedTeams);
-        if (newExpanded.has(teamName)) {
-            newExpanded.delete(teamName);
-        } else {
-            newExpanded.add(teamName);
-        }
-        setExpandedTeams(newExpanded);
-    };
 
     const isCheckedIn = (personId: string, eventId: string) => {
         return checkins.some(c => c.person_id === personId && c.event_id === eventId);
