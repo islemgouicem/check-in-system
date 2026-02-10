@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'react-hot-toast';
-import { PartyPopper, Search, QrCode, LogOut, CheckCircle, Users, ShieldCheck } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { PartyPopper, Search, QrCode, CheckCircle, Users, ShieldCheck } from 'lucide-react';
 import ScannerOverlay from '../components/ScannerOverlay';
 import { useDebounce } from '../hooks/useDebounce';
 
@@ -28,7 +27,6 @@ interface SearchResult {
 }
 
 export default function ManagerDashboard() {
-    const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [activeEvent, setActiveEvent] = useState<any>(null);
     const [stats, setStats] = useState<EventStats>({
@@ -185,10 +183,6 @@ export default function ManagerDashboard() {
         handleManualSearch(result);
     };
 
-    const handleLogout = async () => {
-        await supabase.auth.signOut();
-        navigate('/login');
-    };
 
     if (loading) {
         return (
