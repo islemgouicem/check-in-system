@@ -1,27 +1,42 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary-50: #eff6ff;
-  --color-primary-100: #dbeafe;
-  --color-primary-200: #bfdbfe;
-  --color-primary-300: #93c5fd;
-  --color-primary-400: #60a5fa;
-  --color-primary-500: #3b82f6;
-  --color-primary-600: #2563eb;
-  --color-primary-700: #1d4ed8;
-  --color-primary-800: #1e40af;
-  --color-primary-900: #1e3a8a;
-  --color-primary-950: #172554;
+  /* Skillntell Orange (Accent) mapped to Primary */
+  --color-primary-50: #fff7ed;
+  --color-primary-100: #fff0e5;
+  --color-primary-200: #ffc78a;
+  --color-primary-300: #ff9e00;
+  --color-primary-400: #ff8500;
+  --color-primary-500: #ff6d00;
+  --color-primary-600: #e66200;
+  --color-primary-700: #cc5700;
+  --color-primary-800: #b34c00;
+  --color-primary-900: #994100;
+  --color-primary-950: #7a3400;
 
-  --color-secondary-50: #faf5ff;
-  --color-secondary-100: #f3e8ff;
-  --color-secondary-200: #e9d5ff;
-  --color-secondary-300: #d8b4fe;
-  --color-secondary-400: #c084fc;
-  --color-secondary-500: #a855f7;
-  --color-secondary-600: #9333ea;
-  --color-secondary-700: #7e22ce;
-  --color-secondary-800: #6b21a8;
-  --color-secondary-900: #581c87;
-  --color-secondary-950: #3b0764;
+  /* Skillntell Purple (Main) mapped to Secondary */
+  --color-secondary-50: #fbf8ff;
+  --color-secondary-100: #f7f0ff;
+  --color-secondary-200: #eddbff;
+  --color-secondary-300: #d7aeff;
+  --color-secondary-400: #9d4edd;
+  --color-secondary-500: #7b2cbf;
+  --color-secondary-600: #3c096c;
+  --color-secondary-700: #1a0132;
+  --color-secondary-800: #110121;
+  --color-secondary-900: #0a0014;
+  --color-secondary-950: #05000a;
+
+  /* Skillntell Neutrals */
+  --color-neutral-100: #f7faff;
+  --color-neutral-200: #e0e5eb;
+  --color-neutral-300: #bfc7d4;
+  --color-neutral-400: #657084;
+  --color-neutral-500: #373e4e;
+  --color-neutral-600: #222631;
+  --color-neutral-700: #1a1e26;
+  --color-neutral-800: #12151a;
+  --color-neutral-900: #0a0c0f;
+
+  --color-error-200: #ff6e6e;
 }

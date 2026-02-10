@@ -171,7 +171,7 @@ const AdminDashboard = () => {
             </div>
 
             {/* Event Management */}
-            <div className="bg-[#121212] p-8 rounded-2xl border border-[#2A2A2A] shadow-lg">
+            <div className="bg-secondary-800 p-8 rounded-2xl border border-secondary-600/30 shadow-lg">
                 <div className="flex items-center gap-3 mb-6">
                     <div className="p-2 bg-primary-500/10 rounded-lg">
                         <ShieldCheck className="w-5 h-5 text-primary-400" />
@@ -181,14 +181,14 @@ const AdminDashboard = () => {
 
                 <div className="flex gap-4 mb-8">
                     <input
-                        className="flex-1 bg-[#080808] border border-[#2A2A2A] p-4 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all font-medium"
+                        className="flex-1 bg-secondary-900 border border-secondary-600/30 p-4 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all font-medium"
                         placeholder="New Event Name (e.g. Lunch Day 1)"
                         value={newEventName}
                         onChange={e => setNewEventName(e.target.value)}
                     />
                     <button
                         onClick={createEvent}
-                        className="bg-primary-600 hover:bg-primary-500 text-white px-8 py-2 rounded-xl flex items-center font-bold transition-all shadow-lg shadow-primary-900/20 active:scale-95"
+                        className="bg-primary-500 hover:bg-primary-400 text-white px-8 py-2 rounded-xl flex items-center font-bold transition-all shadow-lg shadow-primary-900/20 active:scale-95"
                     >
                         <Plus className="w-5 h-5 mr-2" /> CREATE
                     </button>
@@ -197,7 +197,7 @@ const AdminDashboard = () => {
                 <div className="mb-8">
                     <label className="block text-xs font-bold text-gray-400 mb-2 uppercase tracking-widest">Active Check-in Target</label>
                     <select
-                        className="w-full bg-[#080808] border border-[#2A2A2A] p-4 rounded-xl text-white focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all font-medium appearance-none cursor-pointer"
+                        className="w-full bg-secondary-900 border border-secondary-600/30 p-4 rounded-xl text-white focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all font-medium appearance-none cursor-pointer"
                         value={activeEvent?.id || ''}
                         onChange={(e) => setActiveEventId(e.target.value)}
                     >
@@ -218,7 +218,7 @@ const AdminDashboard = () => {
                     )}
 
                     {events.map(event => (
-                        <div key={event.id} className="flex justify-between items-center p-4 border border-[#2A2A2A] rounded-2xl hover:border-primary-500/30 bg-[#080808]/50 transition-all group">
+                        <div key={event.id} className="flex justify-between items-center p-4 border border-secondary-600/30 rounded-2xl hover:border-primary-500/30 bg-secondary-900/50 transition-all group">
                             <div className="flex items-center gap-4 flex-1">
                                 <div className={`w-2 h-2 rounded-full ${event.is_active ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-gray-700'}`}></div>
 
@@ -276,7 +276,7 @@ const AdminDashboard = () => {
             </div>
 
             {/* Manual Operations */}
-            <div className="bg-[#121212] p-8 rounded-2xl border border-[#2A2A2A] shadow-lg">
+            <div className="bg-secondary-800 p-8 rounded-2xl border border-secondary-600/30 shadow-lg">
                 <div className="flex items-center gap-3 mb-6">
                     <div className="p-2 bg-secondary-500/10 rounded-lg">
                         <Users className="w-5 h-5 text-secondary-400" />
@@ -288,7 +288,7 @@ const AdminDashboard = () => {
                     <div className="relative flex-1">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                         <input
-                            className="w-full bg-[#080808] border border-[#2A2A2A] pl-12 p-4 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all font-medium"
+                            className="w-full bg-secondary-900 border border-secondary-600/30 pl-12 p-4 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all font-medium"
                             placeholder="Search by name or email..."
                             value={manualQuery}
                             onChange={e => setManualQuery(e.target.value)}
@@ -298,7 +298,7 @@ const AdminDashboard = () => {
                     <button
                         onClick={() => handleManualSearch()}
                         disabled={loading}
-                        className="bg-[#1A1A1A] hover:bg-[#2A2A2A] text-white border border-[#2A2A2A] px-8 py-2 rounded-xl font-bold transition-all disabled:opacity-50 active:scale-95"
+                        className="bg-secondary-900 hover:bg-secondary-700 text-white border border-secondary-600/30 px-8 py-2 rounded-xl font-bold transition-all disabled:opacity-50 active:scale-95"
                     >
                         {loading ? 'SEARCHING...' : 'SEARCH'}
                     </button>
@@ -313,9 +313,9 @@ const AdminDashboard = () => {
                     )}
 
                     {searchResults.map(person => (
-                        <div key={person.id} className="p-5 border border-[#2A2A2A] rounded-2xl flex justify-between items-center bg-[#080808]/50 hover:border-primary-500/30 transition-all group">
+                        <div key={person.id} className="p-5 border border-secondary-600/30 rounded-2xl flex justify-between items-center bg-secondary-900/50 hover:border-primary-500/30 transition-all group">
                             <div className="flex gap-4 items-center">
-                                <div className="w-12 h-12 rounded-full bg-[#121212] border border-[#2A2A2A] flex items-center justify-center font-bold text-secondary-400">
+                                <div className="w-12 h-12 rounded-full bg-secondary-800 border border-secondary-600/30 flex items-center justify-center font-bold text-secondary-400">
                                     {person.full_name?.charAt(0)}
                                 </div>
                                 <div>
@@ -343,7 +343,7 @@ const AdminDashboard = () => {
                                     <button
                                         onClick={() => manualCheckIn(person.id)}
                                         disabled={!activeEvent}
-                                        className="bg-primary-600 hover:bg-primary-500 text-white px-6 py-2.5 rounded-xl text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-lg shadow-primary-900/10 active:scale-95"
+                                        className="bg-primary-500 hover:bg-primary-400 text-white px-6 py-2.5 rounded-xl text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-lg shadow-primary-900/10 active:scale-95"
                                     >
                                         CHECK IN
                                     </button>

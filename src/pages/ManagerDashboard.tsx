@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'react-hot-toast';
-import { PartyPopper, Search, QrCode, CheckCircle, Users, ShieldCheck } from 'lucide-react';
+import { PartyPopper, Search, QrCode, CheckCircle, Users, ShieldCheck, ArrowRight, LogOut } from 'lucide-react';
 import ScannerOverlay from '../components/ScannerOverlay';
 import { useDebounce } from '../hooks/useDebounce';
 
@@ -38,6 +38,7 @@ export default function ManagerDashboard() {
     const [showScanner, setShowScanner] = useState(false);
     const [manualSearchQuery, setManualSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+    const [isSearching, setIsSearching] = useState(false);
     const debouncedQuery = useDebounce(manualSearchQuery, 500);
 
     useEffect(() => {
@@ -120,6 +121,7 @@ export default function ManagerDashboard() {
     const handleManualSearch = async (query: string) => {
         if (!activeEvent || !query.trim()) return;
 
+        setIsSearching(true);
         try {
             // 1. Search Persons using full_name and email
             const { data: persons, error } = await supabase
@@ -153,11 +155,34 @@ export default function ManagerDashboard() {
         } catch (error) {
             console.error('Error searching guests:', error);
             toast.error('Search failed');
+        } finally {
+            setIsSearching(false);
         }
     };
 
-    const handleCheckIn = async (personId: string) => {
+    const handleCheckIn = async (personId: string, personName?: string) => {
         try {
+            // 1. Check for duplicate check-in
+            const { data: existing, error: checkError } = await supabase
+                .from('checkins')
+                .select('id')
+                .eq('event_id', activeEvent.id)
+                .eq('person_id', personId)
+                .maybeSingle();
+
+            if (checkError) throw checkError;
+
+            if (existing) {
+                toast.error(`${personName || 'Guest'} is already checked in!`, {
+                    icon: '🚫',
+                    duration: 4000
+                });
+                // Update results if we were in manual search mode to show the latest status
+                if (manualSearchQuery) handleManualSearch(manualSearchQuery);
+                return;
+            }
+
+            // 2. Insert new check-in
             const { error } = await supabase
                 .from('checkins')
                 .insert({
@@ -167,10 +192,16 @@ export default function ManagerDashboard() {
 
             if (error) throw error;
 
-            toast.success('Guest checked in successfully');
-            setManualSearchQuery('');
-            setSearchResults([]);
+            toast.success(`${personName || 'Guest'} checked in!`, {
+                icon: '✅',
+                duration: 3000
+            });
+
+            // Refresh stats and search results to show "Checked In" button state
             fetchStats();
+            if (manualSearchQuery) {
+                handleManualSearch(manualSearchQuery);
+            }
         } catch (error) {
             console.error('Error checking in guest:', error);
             toast.error('Failed to check in guest');
@@ -178,15 +209,64 @@ export default function ManagerDashboard() {
     };
 
     const handleScan = async (result: string) => {
-        setShowScanner(false);
-        toast.success('Scan detected: ' + result);
-        handleManualSearch(result);
+        // Continuous scanning: Don't close the scanner!
+
+        try {
+            // Trim and clean input
+            const searchVal = result.trim();
+            if (!searchVal) return;
+
+            // 1. Try to figure out if searchVal is a UUID
+            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(searchVal);
+
+            // 2. Build a flexible search query
+            // We search by ID (if UUID), Email (exact), or Full Name (exact)
+            let query = supabase.from('persons').select('id, full_name, role');
+
+            if (isUUID) {
+                query = query.or(`id.eq.${searchVal},email.eq.${searchVal},full_name.eq.${searchVal}`);
+            } else {
+                // If not UUID, search by email or name
+                query = query.or(`email.eq.${searchVal},full_name.eq.${searchVal}`);
+            }
+
+            const { data: person, error } = await query.maybeSingle();
+
+            if (error) throw error;
+
+            if (!person) {
+                // Fallback: If no exact match, try broad search (ILIKE)
+                const { data: fallbackPerson, error: fallbackError } = await supabase
+                    .from('persons')
+                    .select('id, full_name, role')
+                    .or(`full_name.ilike.%${searchVal}%,email.ilike.%${searchVal}%`)
+                    .limit(1)
+                    .maybeSingle();
+
+                if (fallbackError) throw fallbackError;
+
+                if (!fallbackPerson) {
+                    toast.error('Guest not registered or invalid code', { icon: '❓' });
+                    return;
+                }
+
+                await handleCheckIn(fallbackPerson.id, fallbackPerson.full_name);
+                return;
+            }
+
+            // Perform check-in logic for direct match
+            await handleCheckIn(person.id, person.full_name);
+
+        } catch (err) {
+            console.error('Scan processing error:', err);
+            toast.error('Error processing scan');
+        }
     };
 
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#080808] flex items-center justify-center font-['Futura']">
+            <div className="min-h-screen bg-secondary-900 flex items-center justify-center font-['Futura']">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
             </div>
         );
@@ -195,12 +275,12 @@ export default function ManagerDashboard() {
     if (!activeEvent) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center font-['Futura']">
-                <div className="bg-[#121212] p-8 rounded-2xl border border-[#2A2A2A] max-w-md w-full shadow-2xl relative overflow-hidden">
+                <div className="bg-secondary-800/80 p-8 rounded-2xl border border-secondary-600/30 max-w-md w-full shadow-2xl relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-4 opacity-5">
                         <PartyPopper className="w-32 h-32 text-gray-400" />
                     </div>
                     <div className="relative z-10">
-                        <div className="w-16 h-16 bg-[#1A1A1A] rounded-full flex items-center justify-center mx-auto mb-6 border border-[#2A2A2A]">
+                        <div className="w-16 h-16 bg-secondary-900 rounded-full flex items-center justify-center mx-auto mb-6 border border-secondary-600/30">
                             <Search className="w-8 h-8 text-gray-500" />
                         </div>
                         <h2 className="text-xl font-medium text-white mb-3">No Active Event Selected</h2>
@@ -222,9 +302,8 @@ export default function ManagerDashboard() {
 
     return (
         <div className="space-y-8 font-['Futura'] animate-in fade-in duration-500">
-
             {/* Active Event Card */}
-            <div className="bg-[#121212] border border-[#2A2A2A] rounded-2xl p-6 relative overflow-hidden group shadow-lg">
+            <div className="bg-secondary-800 border border-secondary-600/30 rounded-2xl p-6 relative overflow-hidden group shadow-lg">
                 <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-all duration-500">
                     <PartyPopper className="w-24 h-24 text-primary-500 rotate-12" />
                 </div>
@@ -249,7 +328,7 @@ export default function ManagerDashboard() {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-[#121212] p-6 rounded-2xl border border-[#2A2A2A] shadow-md group hover:border-[#3A3A3A] transition-all">
+                <div className="bg-secondary-800 p-6 rounded-2xl border border-secondary-600/30 shadow-md group hover:border-secondary-500/50 transition-all">
                     <div className="flex justify-between items-center mb-4">
                         <p className="text-gray-400 text-xs font-bold tracking-widest uppercase">Total Guests</p>
                         <Users className="w-4 h-4 text-gray-500" />
@@ -257,7 +336,7 @@ export default function ManagerDashboard() {
                     <p className="text-4xl font-bold text-white tracking-tighter">
                         {stats.total_guests}
                     </p>
-                    <div className="mt-4 w-full bg-[#1A1A1A] h-1.5 rounded-full overflow-hidden">
+                    <div className="mt-4 w-full bg-secondary-900 h-1.5 rounded-full overflow-hidden">
                         <div
                             className="bg-primary-500 h-full rounded-full transition-all duration-1000"
                             style={{ width: `${(stats.checked_in_count / (stats.total_guests || 1)) * 100}%` }}
@@ -265,7 +344,7 @@ export default function ManagerDashboard() {
                     </div>
                 </div>
 
-                <div className="bg-[#121212] p-6 rounded-2xl border border-[#2A2A2A] shadow-md group hover:border-[#3A3A3A] transition-all">
+                <div className="bg-secondary-800 p-6 rounded-2xl border border-secondary-600/30 shadow-md group hover:border-secondary-500/50 transition-all">
                     <div className="flex justify-between items-center mb-4">
                         <p className="text-gray-400 text-xs font-bold tracking-widest uppercase">Organizers</p>
                         <ShieldCheck className="w-4 h-4 text-primary-400" />
@@ -276,7 +355,7 @@ export default function ManagerDashboard() {
                         </p>
                         <p className="text-xl font-medium text-gray-500">/ {stats.organizers.total}</p>
                     </div>
-                    <div className="mt-4 w-full bg-[#1A1A1A] h-1.5 rounded-full overflow-hidden">
+                    <div className="mt-4 w-full bg-secondary-900 h-1.5 rounded-full overflow-hidden">
                         <div
                             className="bg-primary-500 h-full rounded-full transition-all duration-1000"
                             style={{ width: `${(stats.organizers.count / (stats.organizers.total || 1)) * 100}%` }}
@@ -284,7 +363,7 @@ export default function ManagerDashboard() {
                     </div>
                 </div>
 
-                <div className="bg-[#121212] p-6 rounded-2xl border border-[#2A2A2A] shadow-md group hover:border-[#3A3A3A] transition-all">
+                <div className="bg-secondary-800 p-6 rounded-2xl border border-secondary-600/30 shadow-md group hover:border-secondary-500/50 transition-all">
                     <div className="flex justify-between items-center mb-4">
                         <p className="text-gray-400 text-xs font-bold tracking-widest uppercase">Participants</p>
                         <Users className="w-4 h-4 text-secondary-400" />
@@ -295,7 +374,7 @@ export default function ManagerDashboard() {
                         </p>
                         <p className="text-xl font-medium text-gray-500">/ {stats.participants.total}</p>
                     </div>
-                    <div className="mt-4 w-full bg-[#1A1A1A] h-1.5 rounded-full overflow-hidden">
+                    <div className="mt-4 w-full bg-secondary-900 h-1.5 rounded-full overflow-hidden">
                         <div
                             className="bg-secondary-500 h-full rounded-full transition-all duration-1000"
                             style={{ width: `${(stats.participants.count / (stats.participants.total || 1)) * 100}%` }}
@@ -321,7 +400,7 @@ export default function ManagerDashboard() {
                 </button>
 
                 {/* Manual Search */}
-                <div className="bg-[#121212] border border-[#2A2A2A] rounded-2xl p-8 shadow-lg">
+                <div className="bg-secondary-800 border border-secondary-600/30 rounded-2xl p-8 shadow-lg">
                     <h3 className="text-xl font-bold text-white mb-6">Manual Search</h3>
                     <div className="relative">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -330,7 +409,7 @@ export default function ManagerDashboard() {
                             placeholder="Search by name or email..."
                             value={manualSearchQuery}
                             onChange={(e) => setManualSearchQuery(e.target.value)}
-                            className="w-full pl-12 pr-4 py-4 bg-[#080808] border border-[#2A2A2A] rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all font-medium"
+                            className="w-full pl-12 pr-4 py-4 bg-secondary-900 border border-secondary-600/30 rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all font-medium"
                             autoComplete="off"
                         />
                     </div>
@@ -338,14 +417,19 @@ export default function ManagerDashboard() {
                     {/* Live Search Results */}
                     {manualSearchQuery.length >= 2 && (
                         <div className="mt-6 space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
-                            {searchResults.length > 0 ? (
+                            {isSearching ? (
+                                <div className="flex flex-col items-center justify-center py-12 text-gray-500 gap-3">
+                                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-500"></div>
+                                    <p className="text-sm font-medium">Searching guests...</p>
+                                </div>
+                            ) : searchResults.length > 0 ? (
                                 searchResults.map((guest) => (
                                     <div
                                         key={guest.id}
-                                        className="flex items-center justify-between p-4 bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl hover:border-primary-500/50 hover:bg-[#222222] transition-all group"
+                                        className="flex items-center justify-between p-4 bg-secondary-900/50 border border-secondary-600/20 rounded-2xl hover:border-primary-500/50 hover:bg-secondary-900 transition-all group"
                                     >
                                         <div className="flex gap-4 items-center">
-                                            <div className="w-10 h-10 rounded-full bg-[#080808] border border-[#2A2A2A] flex items-center justify-center font-bold text-primary-400 text-xs">
+                                            <div className="w-10 h-10 rounded-full bg-secondary-800 border border-secondary-600/30 flex items-center justify-center font-bold text-primary-400 text-xs">
                                                 {guest.name.charAt(0)}
                                             </div>
                                             <div>
@@ -358,13 +442,15 @@ export default function ManagerDashboard() {
                                             </div>
                                         </div>
                                         {guest.status === 'checked_in' ? (
-                                            <span className="flex items-center gap-1.5 text-xs font-bold text-green-400 bg-green-400/10 px-3 py-1.5 rounded-full border border-green-400/20">
-                                                <CheckCircle className="w-4 h-4" />
-                                                IN
-                                            </span>
+                                            <button
+                                                disabled
+                                                className="px-5 py-2 bg-gray-800/50 text-gray-500 text-xs font-bold rounded-xl border border-[#2A2A2A] cursor-not-allowed uppercase tracking-wider"
+                                            >
+                                                CHECKED
+                                            </button>
                                         ) : (
                                             <button
-                                                onClick={() => handleCheckIn(guest.id)}
+                                                onClick={() => handleCheckIn(guest.id, guest.name)}
                                                 className="px-5 py-2 bg-primary-600 hover:bg-primary-500 text-white text-xs font-bold rounded-xl transition-all hover:shadow-lg hover:shadow-primary-900/20 active:scale-95"
                                             >
                                                 CHECK IN

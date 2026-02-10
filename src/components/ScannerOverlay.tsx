@@ -28,12 +28,23 @@ const ScannerOverlay = ({ onScan, onClose }: ScannerOverlayProps) => {
                     formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE]
                 };
 
+                const lastScannedRef = { current: '', time: 0 };
+
                 await scanner.start(
                     { facingMode: "environment" },
                     config,
                     (decodedText) => {
+                        // Debounce/Prevention of rapid duplicate scans of the same item
+                        const now = Date.now();
+                        if (decodedText === lastScannedRef.current && now - lastScannedRef.time < 3000) {
+                            return;
+                        }
+
+                        lastScannedRef.current = decodedText;
+                        lastScannedRef.time = now;
+
                         onScan(decodedText);
-                        stopScanner();
+                        // Removed stopScanner() to allow continuous scanning
                     },
                     (errorMessage) => {
                         // ignore frame parse errors
@@ -76,9 +87,9 @@ const ScannerOverlay = ({ onScan, onClose }: ScannerOverlayProps) => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 bg-[#080808]/95 backdrop-blur-sm text-white flex flex-col items-center justify-center font-['Futura']">
-            <div className="w-full max-w-md bg-[#121212] border border-[#2A2A2A] rounded-2xl overflow-hidden shadow-2xl relative mx-4 flex flex-col max-h-[90vh]">
-                <div className="flex justify-between items-center p-4 border-b border-[#2A2A2A] shrink-0">
+        <div className="fixed inset-0 z-50 bg-secondary-900/95 backdrop-blur-sm text-white flex flex-col items-center justify-center font-['Futura']">
+            <div className="w-full max-w-md bg-secondary-800 border border-secondary-600/30 rounded-2xl overflow-hidden shadow-2xl relative mx-4 flex flex-col max-h-[90vh]">
+                <div className="flex justify-between items-center p-4 border-b border-secondary-600/30 shrink-0">
                     <h2 className="text-lg font-medium text-white flex items-center gap-2">
                         <Camera className="w-5 h-5 text-primary-400" />
                         Scan QR Code
@@ -108,7 +119,7 @@ const ScannerOverlay = ({ onScan, onClose }: ScannerOverlayProps) => {
                             <p className="text-gray-400 text-sm mb-4">{error}</p>
                             <button
                                 onClick={onClose}
-                                className="px-4 py-2 bg-[#1A1A1A] border border-[#2A2A2A] rounded-lg text-white text-sm hover:bg-[#2A2A2A]"
+                                className="px-4 py-2 bg-secondary-900 border border-secondary-600/30 rounded-lg text-white text-sm hover:bg-secondary-800"
                             >
                                 Close Scanner
                             </button>
@@ -118,7 +129,7 @@ const ScannerOverlay = ({ onScan, onClose }: ScannerOverlayProps) => {
                     )}
                 </div>
 
-                <div className="p-4 text-center border-t border-[#2A2A2A] shrink-0">
+                <div className="p-4 text-center border-t border-secondary-600/30 shrink-0">
                     <p className="text-sm text-gray-400">
                         Point camera at a guest's QR code
                     </p>

@@ -8,4 +8,8 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    host: true,          // allows Vite to listen on all network interfaces
+    allowedHosts: ['pearle-barbed-afton.ngrok-free.dev'], // allows ngrok (or any host) for dev
+  },
 })

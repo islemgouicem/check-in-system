@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast'
 import LoginPage from './pages/LoginPage'
 import ManagerDashboard from './pages/ManagerDashboard'
 import AdminDashboard from './pages/AdminDashboard'
+import AdminReports from './pages/AdminReports'
 import DashboardLayout from './layouts/DashboardLayout'
 import { AuthProvider } from './context/AuthContext'
 
@@ -17,6 +18,7 @@ function App() {
           <Route element={<DashboardLayout />}>
             <Route path="/manager" element={<ManagerDashboard />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/reports" element={<AdminReports />} />
           </Route>
 
           <Route path="/" element={<Navigate to="/login" replace />} />
