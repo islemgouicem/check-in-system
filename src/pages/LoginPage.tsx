@@ -3,11 +3,12 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { toast } from 'react-hot-toast'
-import { Mail, Lock, ArrowRight } from 'lucide-react'
+import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react'
 
 const LoginPage = () => {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
+    const [showPassword, setShowPassword] = useState(false)
     const [loading, setLoading] = useState(false)
     const navigate = useNavigate()
 
@@ -83,13 +84,25 @@ const LoginPage = () => {
                                     <input
                                         id="password"
                                         name="password"
-                                        type="password"
+                                        type={showPassword ? 'text' : 'password'}
                                         required
-                                        className="w-full pl-12 pr-4 py-4 bg-secondary-900/50 border border-secondary-600/30 rounded-2xl text-white  placeholder-gray-600 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all font-medium"
+                                        className="w-full pl-12 pr-12 py-4 bg-secondary-900/50 border border-secondary-600/30 rounded-2xl text-white  placeholder-gray-600 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all font-medium"
                                         placeholder="••••••••"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                     />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 hover:text-primary-400 transition-colors focus:outline-none"
+                                        tabIndex={-1}
+                                    >
+                                        {showPassword ? (
+                                            <EyeOff className="w-5 h-5" />
+                                        ) : (
+                                            <Eye className="w-5 h-5" />
+                                        )}
+                                    </button>
                                 </div>
                             </div>
                         </div>

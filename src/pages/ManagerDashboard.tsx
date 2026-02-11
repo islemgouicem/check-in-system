@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'react-hot-toast';
@@ -136,7 +138,7 @@ export default function ManagerDashboard() {
             const formattedResults = await Promise.all((persons || []).map(async (person: any) => {
                 const { data: checkin } = await supabase
                     .from('checkins')
-                    .select('id, created_at')
+                    .select('*')
                     .eq('event_id', activeEvent.id)
                     .eq('person_id', person.id)
                     .maybeSingle();
@@ -160,7 +162,7 @@ export default function ManagerDashboard() {
         }
     };
 
-    const handleCheckIn = async (personId: string, personName?: string) => {
+    const handleCheckIn = async (personId: string, personName?: string, personRole?: string) => {
         try {
             // 1. Check for duplicate check-in
             const { data: existing, error: checkError } = await supabase
@@ -173,7 +175,7 @@ export default function ManagerDashboard() {
             if (checkError) throw checkError;
 
             if (existing) {
-                toast.error(`${personName || 'Guest'} is already checked in!`, {
+                toast.error(`${personName || 'Guest'} (${personRole || '---'}) is already checked in!`, {
                     icon: '🚫',
                     duration: 4000
                 });
@@ -192,7 +194,7 @@ export default function ManagerDashboard() {
 
             if (error) throw error;
 
-            toast.success(`${personName || 'Guest'} checked in!`, {
+            toast.success(`${personName || 'Guest'} (${personRole || '---'}) checked in!`, {
                 icon: '✅',
                 duration: 3000
             });
@@ -250,12 +252,12 @@ export default function ManagerDashboard() {
                     return;
                 }
 
-                await handleCheckIn(fallbackPerson.id, fallbackPerson.full_name);
+                await handleCheckIn(fallbackPerson.id, fallbackPerson.full_name, fallbackPerson.role);
                 return;
             }
 
             // Perform check-in logic for direct match
-            await handleCheckIn(person.id, person.full_name);
+            await handleCheckIn(person.id, person.full_name, person.role);
 
         } catch (err) {
             console.error('Scan processing error:', err);
@@ -388,7 +390,7 @@ export default function ManagerDashboard() {
                 {/* Scanner Action */}
                 <button
                     onClick={() => setShowScanner(true)}
-                    className="flex items-center justify-between p-8 bg-gradient-to-br from-primary-600 to-secondary-600 rounded-2xl hover:brightness-110 transition-all group text-left w-full shadow-xl shadow-primary-900/20 active:scale-[0.98]"
+                    className="flex items-center justify-between p-8 bg-gradient-to-b from-primary-700 to-secondary-800 rounded-2xl hover:brightness-110 transition-all group text-left w-full shadow-xl shadow-secondary-600/20 active:scale-[0.98]"
                 >
                     <div>
                         <h3 className="text-2xl font-bold text-white mb-2">Open Scanner</h3>
@@ -400,7 +402,7 @@ export default function ManagerDashboard() {
                 </button>
 
                 {/* Manual Search */}
-                <div className="bg-secondary-800 border border-secondary-600/30 rounded-2xl p-8 shadow-lg">
+                <div className="bg-secondary-800 border border-secondary-600/30 rounded-2xl py-8 px-4 shadow-lg">
                     <h3 className="text-xl font-bold text-white mb-6">Manual Search</h3>
                     <div className="relative">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -434,9 +436,8 @@ export default function ManagerDashboard() {
                                             </div>
                                             <div>
                                                 <p className="font-bold text-white group-hover:text-primary-400 transition-colors">{guest.name}</p>
-                                                <div className="flex items-center gap-2">
+                                                <div className="items-center gap-2">
                                                     <p className="text-xs text-gray-500">{guest.email}</p>
-                                                    <span className="w-1 h-1 rounded-full bg-gray-600"></span>
                                                     <p className="text-xs text-primary-400 uppercase font-bold tracking-tighter">{guest.role}</p>
                                                 </div>
                                             </div>
@@ -450,7 +451,7 @@ export default function ManagerDashboard() {
                                             </button>
                                         ) : (
                                             <button
-                                                onClick={() => handleCheckIn(guest.id, guest.name)}
+                                                onClick={() => handleCheckIn(guest.id, guest.name, guest.role)}
                                                 className="px-5 py-2 bg-primary-600 hover:bg-primary-500 text-white text-xs font-bold rounded-xl transition-all hover:shadow-lg hover:shadow-primary-900/20 active:scale-95"
                                             >
                                                 CHECK IN
