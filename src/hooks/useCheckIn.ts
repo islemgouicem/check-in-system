@@ -21,14 +21,14 @@ export const useCheckIn = () => {
         }
 
         setProcessing(true)
-        const email = qrData.trim()
+        const scanValue = qrData.trim()
 
         try {
-            // 1. Find Person
+            // 1. Find Person by Name (case-insensitive)
             const { data: person, error: personError } = await supabase
                 .from('persons')
                 .select('*')
-                .or(`email.eq.${email},full_name.eq.${email}`)
+                .ilike('full_name', scanValue)
                 .single()
 
             if (personError || !person) {
@@ -37,22 +37,32 @@ export const useCheckIn = () => {
 
             // 2. Shift Check (Organizers only)
             if (person.role === 'organizer') {
-                const { data: event } = await supabase
+                const { data: event, error: eventError } = await supabase
                     .from('checkin_events')
                     .select('require_shift_check')
                     .eq('id', eventId)
                     .single()
 
+                if (eventError) {
+                    console.error('Event fetch error:', eventError)
+                    throw new Error('Could not verify event settings')
+                }
+
                 if (event?.require_shift_check) {
                     const now = new Date().toISOString()
-                    const { data: shift } = await supabase
+                    console.log('[CheckIn] Validating shift at:', now)
+                    const { data: shift, error: shiftError } = await supabase
                         .from('shifts')
                         .select('id')
                         .eq('person_id', person.id)
-                        .eq('event_id', eventId)
                         .lte('start_time', now)
                         .gte('end_time', now)
                         .maybeSingle()
+
+                    if (shiftError) {
+                        console.error('Shift query error:', shiftError)
+                        throw new Error('Shift data lookup error')
+                    }
 
                     if (!shift) {
                         return { success: false, message: '⚠️ Organizer Not on Shift' }

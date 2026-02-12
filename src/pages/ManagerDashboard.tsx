@@ -6,6 +6,7 @@ import { toast } from 'react-hot-toast';
 import { PartyPopper, Search, QrCode, Users, ShieldCheck } from 'lucide-react';
 import ScannerOverlay from '../components/ScannerOverlay';
 import { useDebounce } from '../hooks/useDebounce';
+import { useCheckIn } from '../hooks/useCheckIn';
 
 interface RoleStats {
     count: number;
@@ -42,6 +43,7 @@ export default function ManagerDashboard() {
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const debouncedQuery = useDebounce(manualSearchQuery, 500);
+    const { checkIn } = useCheckIn();
 
     useEffect(() => {
         fetchActiveEvent();
@@ -163,105 +165,32 @@ export default function ManagerDashboard() {
     };
 
     const handleCheckIn = async (personId: string, personName?: string, personRole?: string) => {
-        try {
-            // 1. Check for duplicate check-in
-            const { data: existing, error: checkError } = await supabase
-                .from('checkins')
-                .select('id')
-                .eq('event_id', activeEvent.id)
-                .eq('person_id', personId)
-                .maybeSingle();
+        if (!activeEvent) return;
 
-            if (checkError) throw checkError;
+        setLoading(true);
+        // personName is used because useCheckIn hook is designed for Name matching
+        // In the dashboard, we already have the name from the search results.
+        const result = await checkIn(personName || '', activeEvent.id);
 
-            if (existing) {
-                toast.error(`${personName || 'Guest'} (${personRole || '---'}) is already checked in!`, {
-                    icon: '🚫',
-                    duration: 4000
-                });
-                // Update results if we were in manual search mode to show the latest status
-                if (manualSearchQuery) handleManualSearch(manualSearchQuery);
-                return;
-            }
-
-            // 2. Insert new check-in
-            const { error } = await supabase
-                .from('checkins')
-                .insert({
-                    event_id: activeEvent.id,
-                    person_id: personId,
-                });
-
-            if (error) throw error;
-
-            toast.success(`${personName || 'Guest'} (${personRole || '---'}) checked in!`, {
-                icon: '✅',
-                duration: 3000
-            });
-
-            // Refresh stats and search results to show "Checked In" button state
+        if (result.success) {
+            toast.success(result.message);
             fetchStats();
-            if (manualSearchQuery) {
-                handleManualSearch(manualSearchQuery);
-            }
-        } catch (error) {
-            console.error('Error checking in guest:', error);
-            toast.error('Failed to check in guest');
+            if (manualSearchQuery) handleManualSearch(manualSearchQuery);
+        } else {
+            toast.error(result.message);
         }
+        setLoading(false);
     };
 
     const handleScan = async (result: string) => {
-        // Continuous scanning: Don't close the scanner!
+        if (!activeEvent) return;
 
-        try {
-            // Trim and clean input
-            const searchVal = result.trim();
-            if (!searchVal) return;
-
-            // 1. Try to figure out if searchVal is a UUID
-            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(searchVal);
-
-            // 2. Build a flexible search query
-            // We search by ID (if UUID), Email (exact), or Full Name (exact)
-            let query = supabase.from('persons').select('id, full_name, role');
-
-            if (isUUID) {
-                query = query.or(`id.eq.${searchVal},email.eq.${searchVal},full_name.eq.${searchVal}`);
-            } else {
-                // If not UUID, search by email or name
-                query = query.or(`email.eq.${searchVal},full_name.eq.${searchVal}`);
-            }
-
-            const { data: person, error } = await query.maybeSingle();
-
-            if (error) throw error;
-
-            if (!person) {
-                // Fallback: If no exact match, try broad search (ILIKE)
-                const { data: fallbackPerson, error: fallbackError } = await supabase
-                    .from('persons')
-                    .select('id, full_name, role')
-                    .or(`full_name.ilike.%${searchVal}%,email.ilike.%${searchVal}%`)
-                    .limit(1)
-                    .maybeSingle();
-
-                if (fallbackError) throw fallbackError;
-
-                if (!fallbackPerson) {
-                    toast.error('Guest not registered or invalid code', { icon: '❓' });
-                    return;
-                }
-
-                await handleCheckIn(fallbackPerson.id, fallbackPerson.full_name, fallbackPerson.role);
-                return;
-            }
-
-            // Perform check-in logic for direct match
-            await handleCheckIn(person.id, person.full_name, person.role);
-
-        } catch (err) {
-            console.error('Scan processing error:', err);
-            toast.error('Error processing scan');
+        const res = await checkIn(result, activeEvent.id);
+        if (res.success) {
+            toast.success(res.message);
+            fetchStats();
+        } else {
+            toast.error(res.message);
         }
     };
 

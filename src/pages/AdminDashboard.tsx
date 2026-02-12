@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useDebounce } from '../hooks/useDebounce'
+import { useCheckIn } from '../hooks/useCheckIn'
 import { supabase } from '../lib/supabase'
 import { toast } from 'react-hot-toast'
 import { Plus, Search, Trash2, CheckCircle, ShieldCheck, Users, Pencil, Check, X as CloseIcon } from 'lucide-react'
@@ -89,6 +90,15 @@ const AdminDashboard = () => {
         }
     }
 
+    const toggleShiftCheck = async (id: string, currentStatus: boolean) => {
+        const { error } = await supabase.from('checkin_events').update({ require_shift_check: !currentStatus }).eq('id', id)
+        if (error) toast.error(error.message)
+        else {
+            toast.success('Shift check policy updated')
+            fetchEvents()
+        }
+    }
+
     const setActiveEventId = async (id: string) => {
         if (!id) return
         await supabase.from('checkin_events').update({ is_active: false }).neq('id', id)
@@ -138,19 +148,22 @@ const AdminDashboard = () => {
         }
     }
 
-    const manualCheckIn = async (personId: string) => {
+    const { checkIn } = useCheckIn()
+
+    const manualCheckIn = async (personId: string, fullName: string) => {
         if (!activeEvent) return toast.error('No active event')
 
-        const { error } = await supabase.from('checkins').insert({
-            event_id: activeEvent.id,
-            person_id: personId,
-        })
+        setLoading(true)
+        // We use the full name for the hook as it's designed for QR/Name matching
+        const result = await checkIn(fullName, activeEvent.id)
 
-        if (error) toast.error(error.message)
-        else {
-            toast.success('Checked in successfully')
-            handleManualSearch() // Refresh state
+        if (result.success) {
+            toast.success(result.message)
+            handleManualSearch()
+        } else {
+            toast.error(result.message)
         }
+        setLoading(false)
     }
 
     const manualUncheck = async (checkinId: string) => {
@@ -254,6 +267,17 @@ const AdminDashboard = () => {
                                 )}
                             </div>
                             <div className="flex items-center gap-4">
+                                <button
+                                    onClick={() => toggleShiftCheck(event.id, event.require_shift_check)}
+                                    className={`flex items-center gap-1.5 px-3 py-1 text-[10px] font-bold rounded-full border transition-all ${event.require_shift_check
+                                        ? 'bg-primary-500/10 text-primary-400 border-primary-500/20'
+                                        : 'bg-gray-800/50 text-gray-500 border-gray-700/50'
+                                        }`}
+                                    title="Toggle Shift Check for Organizers"
+                                >
+                                    <ShieldCheck className="w-3 h-3" />
+                                    {event.require_shift_check ? 'SHIFT CHECK: ON' : 'SHIFT CHECK: OFF'}
+                                </button>
                                 <span className={`px-3 py-1 text-[10px] font-bold rounded-full tracking-tighter border ${event.is_active
                                     ? 'bg-green-500/10 text-green-400 border-green-500/20'
                                     : 'bg-gray-800/50 text-gray-500 border-gray-700/50'
@@ -341,11 +365,11 @@ const AdminDashboard = () => {
                                     </div>
                                 ) : (
                                     <button
-                                        onClick={() => manualCheckIn(person.id)}
-                                        disabled={!activeEvent}
+                                        onClick={() => manualCheckIn(person.id, person.full_name)}
+                                        disabled={!activeEvent || loading}
                                         className="bg-primary-500 hover:bg-primary-400 text-white px-6 py-2.5 rounded-xl text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-lg shadow-primary-900/10 active:scale-95"
                                     >
-                                        CHECK IN
+                                        {loading ? '...' : 'CHECK IN'}
                                     </button>
                                 )}
                             </div>
