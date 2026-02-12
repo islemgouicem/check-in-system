@@ -150,7 +150,7 @@ const AdminDashboard = () => {
 
     const { checkIn } = useCheckIn()
 
-    const manualCheckIn = async (personId: string, fullName: string) => {
+    const manualCheckIn = async (fullName: string) => {
         if (!activeEvent) return toast.error('No active event')
 
         setLoading(true)
@@ -365,7 +365,7 @@ const AdminDashboard = () => {
                                     </div>
                                 ) : (
                                     <button
-                                        onClick={() => manualCheckIn(person.id, person.full_name)}
+                                        onClick={() => manualCheckIn(person.full_name)}
                                         disabled={!activeEvent || loading}
                                         className="bg-primary-500 hover:bg-primary-400 text-white px-6 py-2.5 rounded-xl text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-lg shadow-primary-900/10 active:scale-95"
                                     >

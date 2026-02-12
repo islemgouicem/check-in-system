@@ -164,7 +164,7 @@ export default function ManagerDashboard() {
         }
     };
 
-    const handleCheckIn = async (personId: string, personName?: string, personRole?: string) => {
+    const handleCheckIn = async (personName?: string) => {
         if (!activeEvent) return;
 
         setLoading(true);
@@ -380,7 +380,7 @@ export default function ManagerDashboard() {
                                             </button>
                                         ) : (
                                             <button
-                                                onClick={() => handleCheckIn(guest.id, guest.name, guest.role)}
+                                                onClick={() => handleCheckIn(guest.name)}
                                                 className="px-5 py-2 bg-primary-600 hover:bg-primary-500 text-white text-xs font-bold rounded-xl transition-all hover:shadow-lg hover:shadow-primary-900/20 active:scale-95"
                                             >
                                                 CHECK IN
