@@ -49,23 +49,41 @@ export const useCheckIn = () => {
                 }
 
                 if (event?.require_shift_check) {
-                    const now = new Date().toISOString()
-                    console.log('[CheckIn] Validating shift at:', now)
-                    const { data: shift, error: shiftError } = await supabase
+                    // Check if they have ANY shifts assigned at all
+                    const { data: hasShifts, error: shiftsExistError } = await supabase
                         .from('shifts')
                         .select('id')
                         .eq('person_id', person.id)
-                        .lte('start_time', now)
-                        .gte('end_time', now)
-                        .maybeSingle()
+                        .limit(1)
 
-                    if (shiftError) {
-                        console.error('Shift query error:', shiftError)
-                        throw new Error('Shift data lookup error')
+                    if (shiftsExistError) {
+                        console.error('Shifts existence check error:', shiftsExistError)
+                        throw new Error('Could not verify shift assignment')
                     }
 
-                    if (!shift) {
-                        return { success: false, message: '⚠️ Organizer Not on Shift' }
+                    // Only enforce if they have at least one shift assigned
+                    if (hasShifts && hasShifts.length > 0) {
+                        const now = new Date().toISOString()
+                        console.log('[CheckIn] Validating shift at:', now)
+                        const { data: shift, error: shiftError } = await supabase
+                            .from('shifts')
+                            .select('id')
+                            .eq('person_id', person.id)
+                            .lte('start_time', now)
+                            .gte('end_time', now)
+                            .maybeSingle()
+
+                        if (shiftError) {
+                            console.error('Shift query error:', shiftError)
+                            throw new Error('Shift data lookup error')
+                        }
+
+                        console.log('[CheckIn] Shift found:', shift)
+                        if (!shift) {
+                            return { success: false, message: '⚠️ Organizer Not on Shift' }
+                        }
+                    } else {
+                        console.log('[CheckIn] Organizer has no assigned shifts - allowing access.')
                     }
                 }
             }
